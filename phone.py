@@ -1,5 +1,7 @@
 from pyfirmata import Arduino, util 
 from time import sleep
+import asyncio
+from websockets import connect
 
 board = Arduino("/dev/ttyACM0", baudrate=57600)
 
@@ -13,6 +15,11 @@ flagHoererOben = 0
 it = util.Iterator(board)
 it.start()
 board.analog[0].enable_reporting()
+
+async def communicateVirtual(uri):
+    async with connect(uri) as websocket:
+        await websocket.send("flagHoererOben = " + str(flagHoererOben))
+        await websocket.recv()
 
 while True:
     sleep(0.01)
@@ -40,3 +47,5 @@ while flagIncomingFromVirtual == 1:
         board.digital[3].write(0)
 
     sleep(2)
+
+asyncio.run(communicateVirtual("https://virtual.obejtkleina.com:8765"))
