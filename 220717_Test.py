@@ -70,15 +70,25 @@ async def handler(websocket):
         print(flagIncomingFromVirtual)
 
         #ring the bell
-        if flagIncomingFromVirtual == "RingingStart":
+        if flagIncomingFromVirtual == "RingingStart": #Grundsätzlich scheint das hier nicht so zu loopen, wie es soll...
             #RingSubProcess = asyncio.create_subprocess_exec (Ring, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE) #will auch "await" und damit warten bis der Loop in der Function fertig ist. Nicht für Event zu gebrauchen
-            RingSubProcess = subprocess.run(Ring(), capture_output = True) #bleibt auch an dieser Stelle im Loop hängen, wenn die Function while True enthällt
+            """ RingSubProcess = subprocess.run(Ring(), capture_output = True) #bleibt auch an dieser Stelle im Loop hängen, wenn die Function while True enthällt
             #await Ring() #lässt den gesamten handle while loop nur einmal laufen ... KEINE AHNUNG WARUM, AUCH WENN "running" bei gleicher Flag schon wieder geprintet wird
             #flagIncomingFromVirtual = await Ring() #Versuch, die Varable zu pipen, das scheint aber nicht das Problem des nicht weitergehenden Loops
             #RingSubProcess = await asyncio.to_thread(Ring) # functioniert nicht, weil der Loop nie weiter geht als hier
             #with concurrent.futures.ThreadPoolExecutor() as pool: RingSubProcess = await loop.run_in_executor(pool, Ring)
         if RingSubProcess != None and flagIncomingFromVirtual == "RingingStop":
-            RingSubProcess.terminate() 
+            RingSubProcess.terminate()  """
+            for x in range(10):
+                board.digital[2].write(1)
+                await asyncio.sleep(0.03)
+                board.digital[2].write(0)
+                board.digital[3].write(1)
+                await asyncio.sleep(0.03)
+                board.digital[3].write(0)
+                
+            print("ring")
+            await asyncio.sleep(2)
         else:
             pass #war als event gedacht, will so aber nicht so richtig
         
