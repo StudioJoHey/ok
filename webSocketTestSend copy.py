@@ -34,7 +34,7 @@ async def listenAndRing():
             JSONIncomingFromVirtual = await ws.recv()
             DictIncomingFromVirtual = eval(JSONIncomingFromVirtual)
             flagIncomingFromVirtual = DictIncomingFromVirtual["event"]
-            print("flagIncomingFromVirtual type: " + type(flagIncomingFromVirtual))
+            print("flagIncomingFromVirtual type: " + str(type(flagIncomingFromVirtual)))
             print(flagIncomingFromVirtual)
 
             #ring the bell
@@ -54,11 +54,13 @@ async def listenAndRing():
                 pass
 
             await asyncio.sleep(0.05)
-            return flagIncomingFromVirtual
-            needs to be outside the looped, since it only comes once by the server
+            #return flagIncomingFromVirtual
 
+# Der Teil hier hat bei in der Browser-Konsole grundsätzlich funktioniert. 
+# Problem: der Return funktioniert nicht so richtig. Die Flag zum Verglechen des Status für ein
+# Event kommt noch nicht so an, dass saubere Events gesendet werden.
 """ async def server(websocket, path):
-    readResult = board.analog[0].read()
+    readResult = board.analog[0].read() 
     #print(readResult)
     if readResult <= 0.2:
         flagHoererObenNow = False
