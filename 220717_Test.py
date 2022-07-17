@@ -1,17 +1,18 @@
 import asyncio
 import threading
+from typing import Optional
 
 import websockets
-import subprocess
 
 import json
-from types import SimpleNamespace
 
 from pyfirmata import Arduino, util
 from time import sleep
+from api_model.EventObject import EventObject
+
 
 # board = Arduino("/dev/ttyACM0", baudrate=57600)
-board: Arduino = None
+board: Optional[Arduino] = None
 
 # print(board.get_firmata_version())
 # #checks generell woking connection
@@ -57,15 +58,23 @@ async def handler(websocket: websockets.WebSocketServerProtocol) -> None:
     while True:
         print("client connected, awaiting input")
         json_incoming_from_virtual = await websocket.recv()
-        # expects {"event": "RingingStart"}
-        # TODO: create type for parsing
-        # TODO: use boolean for the flags?
-        dict_incoming_from_virtual = eval(json_incoming_from_virtual)
-        flag_incoming_from_virtual = dict_incoming_from_virtual["event"]
-        print("flag_incoming_from_virtual type: " + str(type(flag_incoming_from_virtual)))
-        print(flag_incoming_from_virtual)
+        try:
+            dict_incoming_from_virtual: EventObject = json.loads(
+                json_incoming_from_virtual, object_hook=lambda e: EventObject(e))
+        except json.decoder.JSONDecodeError:
+            dict_incoming_from_virtual = json_incoming_from_virtual
+
+        if type(dict_incoming_from_virtual) != EventObject:
+            print("Event isn't a json object: ")
+            print(json_incoming_from_virtual)
+            continue
+
+        flag_incoming_from_virtual = dict_incoming_from_virtual.event
+        print(f'event flag: "{flag_incoming_from_virtual}" ({type(flag_incoming_from_virtual).__name__})')
 
         # ring the bell
+        if flag_incoming_from_virtual is None:
+            print("json key 'event' missing; can't decide what to do.")
         if flag_incoming_from_virtual == "RingingStart":
             StopEvent.clear()
             ring_thread = threading.Thread(target=ring, name="Ringer")
@@ -78,7 +87,7 @@ async def handler(websocket: websockets.WebSocketServerProtocol) -> None:
 
 async def main() -> None:
     async with websockets.serve(handler, WsDomain, WsPort):
-        print("starting server, awaiting inputs")
+        print("starting server, awaiting connections")
         # python -m websockets ws://localhost:3003
         await asyncio.Future()  # run forever
 
