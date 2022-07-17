@@ -25,7 +25,7 @@ board.analog[0].enable_reporting()
 
 url = "ws://localhost:3003"
 
-async def listenAndRing():
+""" async def listenAndRing():
     
     async with websockets.connect(url) as ws:
         while True:
@@ -34,7 +34,7 @@ async def listenAndRing():
             JSONIncomingFromVirtual = await ws.recv()
             DictIncomingFromVirtual = eval(JSONIncomingFromVirtual)
             flagIncomingFromVirtual = DictIncomingFromVirtual["event"]
-            print("flagIncomingFromVirtual type: " + type(flagIncomingFromVirtual))
+            print("flagIncomingFromVirtual type: " + str(type(flagIncomingFromVirtual)))
             print(flagIncomingFromVirtual)
 
             #ring the bell
@@ -54,11 +54,14 @@ async def listenAndRing():
                 pass
 
             await asyncio.sleep(0.05)
-            return flagIncomingFromVirtual
-            needs to be outside the looped, since it only comes once by the server
+            #return flagIncomingFromVirtual """
 
-""" async def server(websocket, path):
-    readResult = board.analog[0].read()
+# Der Teil hier hat zeigt grundsätzlichdas Event "RecieverPicketUp" in der Browser-Konsole.
+# Problem: Es werden immer wieder neue Server gestartet, was den Browser crasht und auch 
+# für die Kommunikation nicht wirklicht Sinn ergibt.
+# Frage: Könnte der ganze Send-Teil hier ein eigener Client sein, der zu etwas wie ws://staging.objektkleina.com:5135 connected?
+async def server(websocket, path):
+    readResult = board.analog[0].read() 
     #print(readResult)
     if readResult <= 0.2:
         flagHoererObenNow = False
@@ -82,13 +85,13 @@ async def listenAndRing():
         #await asyncio.sleep(0.2)
     
     flagHoererObenNow = flagHoererOben
-    return flagHoererOben """
+    return flagHoererOben
 
 # Create websocket server
-#start_server = websockets.serve(server, "localhost", 3003)
+start_server = websockets.serve(server, "localhost", 3003)
 
 # Start and run websocket server forever
 # Server has to be running before browser ist loaded
-#asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_until_complete(listenAndRing)
+asyncio.get_event_loop().run_until_complete(start_server)
+#asyncio.get_event_loop().run_until_complete(listenAndRing)
 asyncio.get_event_loop().run_forever()
