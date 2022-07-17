@@ -1,6 +1,6 @@
 from pyfirmata import Arduino, util 
 from time import sleep
-import multiprocessing
+import websockets
 
 board = Arduino("/dev/ttyACM0", baudrate=57600)
 flagHoererOben = True
@@ -8,6 +8,7 @@ flagHoererOben = True
 
 it = util.Iterator(board)
 it.start() 
+#board.digital[7].read()
 board.analog[0].enable_reporting()
 sleep(0.5)
 
