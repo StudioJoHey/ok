@@ -1,4 +1,6 @@
 import asyncio
+import threading
+
 import websockets
 import subprocess
 
@@ -9,6 +11,7 @@ from pyfirmata import Arduino, util
 from time import sleep
 
 # board = Arduino("/dev/ttyACM0", baudrate=57600)
+board: Arduino = None
 
 # print(board.get_firmata_version())
 # #checks generell woking connection
@@ -26,46 +29,37 @@ data = '{"event": "RingsMaybe"}'
 WsDomain = "localhost"
 WsPort = 3003
 
+StopEvent = threading.Event()
+
 
 # switches the pysical phone bell on by alternating the current
-# def Ring(): #to run with ThreadPoolExecutor or regular subprocess
-def ring():
-    # while True: #when run as "event based" subrpocess
-    print("ring")
-    for x in range(10):
-        print("board.digital[2].write(1)")
-        sleep(0.03)
-        print("board.digital[2].write(0)")
-        print("board.digital[3].write(1)")
-        sleep(0.03)
-        print("board.digital[3].write(0)")
-
-    sleep(1)
-    return
-
-
-""" async def Ring(): 
-    while True: #when run as "event based" subrpocess
+def ring() -> None:
+    print("ring init")
+    while not StopEvent.is_set():  # when run as "event based" subprocess
         print("ring")
-        for x in range(10):
-            board.digital[2].write(1)
-            await asyncio.sleep(0.03)
-            board.digital[2].write(0)
-            board.digital[3].write(1)
-            await asyncio.sleep(0.03)
-            board.digital[3].write(0)
+        if board is not None:
+            for x in range(10):
+                board.digital[2].write(1)
+                sleep(0.03)
+                board.digital[2].write(0)
+                board.digital[3].write(1)
+                sleep(0.03)
+                board.digital[3].write(0)
 
-        await asyncio.sleep(1) """
+        sleep(1)
 
 
 # return flagIncomingFromVirtual = "RingingStart"
 
-async def handler(websocket: websockets.WebSocketServerProtocol):
+async def handler(websocket: websockets.WebSocketServerProtocol) -> None:
     # loop = asyncio.get_running_loop() #für ThreadPoolExecutor
-    ring_sub_process = None
+    ring_thread: threading.Thread
     while True:
-        print("running")
+        print("client connected, awaiting input")
         json_incoming_from_virtual = await websocket.recv()
+        # expects {"event": "RingingStart"}
+        # TODO: create type for parsing
+        # TODO: use boolean for the flags?
         dict_incoming_from_virtual = eval(json_incoming_from_virtual)
         flag_incoming_from_virtual = dict_incoming_from_virtual["event"]
         print("flag_incoming_from_virtual type: " + str(type(flag_incoming_from_virtual)))
@@ -73,20 +67,19 @@ async def handler(websocket: websockets.WebSocketServerProtocol):
 
         # ring the bell
         if flag_incoming_from_virtual == "RingingStart":
-            # ring_sub_process = asyncio.create_subprocess_exec (Ring, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE) #will auch "await" und damit warten bis der Loop in der Function fertig ist. Nicht für Event zu gebrauchen
-            ring_sub_process = subprocess.run(ring, capture_output=True)  # bleibt auch an dieser Stelle im Loop hängen, wenn die Function while True enthällt
-            # await Ring() #lässt den gesamten handle while loop nur einmal laufen ... KEINE AHNUNG WARUM, AUCH WENN "running" bei gleicher Flag schon wieder geprintet wird
-            # flag_incoming_from_virtual = await Ring() #Versuch, die Varable zu pipen, das scheint aber nicht das Problem des nicht weitergehenden Loops
-            # ring_sub_process = await asyncio.to_thread(Ring) # functioniert nicht, weil der Loop nie weiter geht als hier
-            # with concurrent.futures.ThreadPoolExecutor() as pool: ring_sub_process = await loop.run_in_executor(pool, Ring)
-        if ring_sub_process is not None and flag_incoming_from_virtual == "RingingStop":
-            ring_sub_process.terminate()
+            StopEvent.clear()
+            ring_thread = threading.Thread(target=ring, name="Ringer")
+            ring_thread.start()
+        if flag_incoming_from_virtual == "RingingStop":
+            StopEvent.set()
         else:
             pass  # war als event gedacht, will so aber nicht so richtig
 
 
-async def main():
+async def main() -> None:
     async with websockets.serve(handler, WsDomain, WsPort):
+        print("starting server, awaiting inputs")
+        # python -m websockets ws://localhost:3003
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
