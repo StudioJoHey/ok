@@ -7,32 +7,44 @@
          function WebSocketTest() {
             
             if ("WebSocket" in window) {
-               alert("WebSocket is supported by your Browser!");
+               console.info("WebSocket is supported by your Browser!");
                
                // Let us open a web socket
-               var ws = new WebSocket("ws://localhost:3003/phone");
+               var ws = new WebSocket("ws://localhost:3003/");
 				
                ws.onopen = function() {
+
+                  msg = {
+                     subscribeToHoerer: true,
+                     event: "RingingStop"
+                  }
                   
                   // Web Socket is connected, send data using send()
-                  ws.send("Message to send: Hi, I am a Webbrowser");
-                  alert("Message is sent...");
+                  ws.send(JSON.stringify(msg));
+                  console.log("Message is sent...");
                };
+
 				
                ws.onmessage = function (evt) { 
-                  var received_msg = evt.data;
-                  alert("Message is received...");
+                  var received_msg = JSON.parse(evt.data);
+                  console.log("Message is received:");
+                  console.log(received_msg)
+
+                  if (received_msg.hoerer_state != undefined) {
+                     console.log("ACK-ing");
+                     ws.send("ACK");
+                  }
                };
 				
                ws.onclose = function() { 
                   
                   // websocket is closed.
-                  alert("Connection is closed..."); 
+                  console.log("Connection is closed..."); 
                };
             } else {
               
                // The browser doesn't support WebSocket
-               alert("WebSocket NOT supported by your Browser!");
+               console.warn("WebSocket NOT supported by your Browser!");
             }
          }
       </script>
