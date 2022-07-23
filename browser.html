@@ -2,6 +2,7 @@
 
 <html>
    <head>
+      <meta charset="utf-8">
       
       <script type = "text/javascript">
          function WebSocketTest() {
@@ -11,33 +12,38 @@
                
                // Let us open a web socket
                var ws = new WebSocket("ws://localhost:3003/");
-				
-               ws.onopen = function() {
 
-                  msg = {
-                     subscribeToHoerer: true,
-                     event: "RingingStop"
-                  }
-                  
+               ws.onopen = function() {
+                  document.getElementById("withConnection").removeAttribute("hidden");
+                  document.getElementById("startButton").onclick = () => {
+                     ws.send(makeMsg("RingingStart", undefined));
+                  };
+                  document.getElementById("stopButton").onclick = () => {
+                     ws.send(makeMsg("RingingStop", undefined));
+                  };
+
                   // Web Socket is connected, send data using send()
-                  ws.send(JSON.stringify(msg));
+                  ws.send(makeMsg("RingingStop", "now"));
                   console.log("Message is sent...");
                };
 
-				
-               ws.onmessage = function (evt) { 
+               ws.onmessage = function (evt) {
                   var received_msg = JSON.parse(evt.data);
                   console.log("Message is received:");
                   console.log(received_msg)
 
                   if (received_msg.hoerer_state != undefined) {
+                     let state = received_msg.hoerer_state ? "UP" : "DOWN";
+                     console.info("Hoerer is " + state);
+                     document.getElementById("hoererReadout").textContent = state;
+
                      console.log("ACK-ing");
-                     ws.send("ACK");
+                     ws.send(makeMsg(undefined, "onchange"));
                   }
                };
 				
                ws.onclose = function() { 
-                  
+                  document.getElementById("ctrlButtons").setAttribute("hidden", true);
                   // websocket is closed.
                   console.log("Connection is closed..."); 
                };
@@ -47,13 +53,31 @@
                console.warn("WebSocket NOT supported by your Browser!");
             }
          }
+
+         function makeMsg(event, hoerer) {
+            msg = {
+               event: event,
+               subscribeToHoerer: hoerer,
+            }
+
+            return JSON.stringify(msg);
+         }
       </script>
 		
    </head>
    
-   <body>
+   <body onload="javascript:WebSocketTest()">
       <div id = "sse">
-         <a href = "javascript:WebSocketTest()">Run WebSocket</a>
+         <a href = "javascript:WebSocketTest()">Retry</a>
+      </div>
+
+
+      <div id="withConnection" hidden>
+         <hr>
+         <button id="startButton">Start Ringing</button>
+         <button id="stopButton">Stop Ringing</button>
+         <hr>
+         <span>Hörer ist </span><span id="hoererReadout"></span>
       </div>
       
    </body>
