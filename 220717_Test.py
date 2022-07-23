@@ -69,7 +69,7 @@ async def get_hoerer_change() -> bool:
     response: str = await asyncio.get_event_loop().run_in_executor(
         None, sys.stdin.readline)
 
-    return response.strip().lower() == "y"
+    return response.strip().lower().startswith("y")
 
 
 async def handler(websocket: websockets.WebSocketServerProtocol) -> None:

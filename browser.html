@@ -10,24 +10,44 @@
             if ("WebSocket" in window) {
                console.info("WebSocket is supported by your Browser!");
                
-               // Let us open a web socket
-               var ws = new WebSocket("ws://localhost:3003/");
+               // Let us open a web socket for ringing
+               var wsRing = new WebSocket("ws://localhost:3003/");
 
-               ws.onopen = function() {
-                  document.getElementById("withConnection").removeAttribute("hidden");
+               wsRing.onopen = function() {
+                  document.getElementById("ctrlButtons").removeAttribute("hidden");
                   document.getElementById("startButton").onclick = () => {
-                     ws.send(makeMsg("RingingStart", undefined));
+                     wsRing.send(makeMsg("RingingStart", undefined));
                   };
                   document.getElementById("stopButton").onclick = () => {
-                     ws.send(makeMsg("RingingStop", undefined));
+                     wsRing.send(makeMsg("RingingStop", undefined));
                   };
 
+               };
+
+               wsRing.onmessage = function (evt) {
+                  var received_msg = JSON.parse(evt.data);
+                  console.log("Message is received on ring connection:");
+                  console.log(received_msg)
+               };
+				
+               wsRing.onclose = function() {
+                  document.getElementById("ctrlButtons").setAttribute("hidden", true);
+                  // websocket is closed.
+                  console.log("Ring connection is closed...");
+               };
+
+               // Let us open a web socket to check on the hoerer
+               var wsHoererUpdate = new WebSocket("ws://localhost:3003/");
+
+               wsHoererUpdate.onopen = function() {
+                  document.getElementById("hoererDiv").removeAttribute("hidden");
+
                   // Web Socket is connected, send data using send()
-                  ws.send(makeMsg("RingingStop", "now"));
+                  wsHoererUpdate.send(makeMsg(undefined, "now"));
                   console.log("Message is sent...");
                };
 
-               ws.onmessage = function (evt) {
+               wsHoererUpdate.onmessage = function (evt) {
                   var received_msg = JSON.parse(evt.data);
                   console.log("Message is received:");
                   console.log(received_msg)
@@ -37,15 +57,15 @@
                      console.info("Hoerer is " + state);
                      document.getElementById("hoererReadout").textContent = state;
 
-                     console.log("ACK-ing");
-                     ws.send(makeMsg(undefined, "onchange"));
+                     console.log("acknowledging");
+                     wsHoererUpdate.send(makeMsg(undefined, "onchange"));
                   }
                };
-				
-               ws.onclose = function() { 
-                  document.getElementById("ctrlButtons").setAttribute("hidden", true);
+
+               wsHoererUpdate.onclose = function() {
+                  document.getElementById("hoererDiv").setAttribute("hidden", true);
                   // websocket is closed.
-                  console.log("Connection is closed..."); 
+                  console.log("Connection is closed...");
                };
             } else {
               
@@ -72,10 +92,13 @@
       </div>
 
 
-      <div id="withConnection" hidden>
+      <div id="ctrlButtons" hidden>
          <hr>
          <button id="startButton">Start Ringing</button>
          <button id="stopButton">Stop Ringing</button>
+      </div>
+
+      <div id="hoererDiv" hidden>
          <hr>
          <span>Hörer ist </span><span id="hoererReadout"></span>
       </div>
