@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import threading
 from typing import Optional
 
@@ -8,6 +9,9 @@ import json
 
 #from pyfirmata import Arduino, util
 from time import sleep
+
+from websockets.exceptions import ConnectionClosedOK
+
 from api_model.EventObject import EventObject
 
 
@@ -31,60 +35,59 @@ WsDomain = "localhost"
 WsPort = 3003
 
 RingStopEvent = threading.Event()
-UpdateStopEvent = threading.Event()
+RingLock = threading.Lock()
 
 
 # switches the pysical phone bell on by alternating the current
 def ring() -> None:
     print("ring init")
-    while not RingStopEvent.is_set():  # when run as "event based" subprocess
-        print("ring")
-        if board is not None:
-            for x in range(10):
-                board.digital[2].write(1)
-                sleep(0.03)
-                board.digital[2].write(0)
-                board.digital[3].write(1)
-                sleep(0.03)
-                board.digital[3].write(0)
+    if RingLock.acquire(blocking=False):
+        while not RingStopEvent.is_set():  # when run as "event based" subprocess
+            print("ring")
+            if board is not None:
+                for x in range(10):
+                    board.digital[2].write(1)
+                    sleep(0.03)
+                    board.digital[2].write(0)
+                    board.digital[3].write(1)
+                    sleep(0.03)
+                    board.digital[3].write(0)
 
-        sleep(1)
-
-
-# switches the pysical phone bell on by alternating the current
-async def continous_update(websocket: websockets.WebSocketServerProtocol) -> None:
-    
-    while not UpdateStopEvent.is_set():  # when run as "event based" subprocess
-        print("updating hoerer state")
-        await websocket.send("abc")
-
-        sleep(1)
+            sleep(1)
+        RingLock.release()
+    else:
+        print("Another tread is already ringing.")
 
 
-# return flagIncomingFromVirtual = "RingingStart"
+def get_hoerer_up() -> bool:
+    return True
 
-def get_hoerer_raised() -> bool:
-    return True;
+
+async def get_hoerer_change() -> bool:
+    await asyncio.get_event_loop().run_in_executor(
+        None, lambda: sys.stdout.write("is the hoerer Up? [yN]"))
+    response: str = await asyncio.get_event_loop().run_in_executor(
+        None, sys.stdin.readline)
+
+    return response.strip().lower().startswith("y")
+
 
 async def handler(websocket: websockets.WebSocketServerProtocol) -> None:
     # loop = asyncio.get_running_loop() #für ThreadPoolExecutor
     ring_thread: threading.Thread
 
-    #update_thread = threading.Thread(target=lambda: continous_update(websocket), name="")
-
-    i=0
     while True:
         print("client connected, awaiting input")
-        json_incoming_from_virtual = await websocket.recv()
+        try:
+            json_incoming_from_virtual = await websocket.recv()
+        except:
+            print("connection failed.")
+            break
         try:
             incoming: EventObject = json.loads(
                 json_incoming_from_virtual, object_hook=lambda e: EventObject(e))
         except json.decoder.JSONDecodeError:
             incoming = json_incoming_from_virtual
-
-        print("updating hoerer state")
-        i+=1
-        send_future = websocket.send(str(i))
 
         if type(incoming) != EventObject:
             print("Event isn't a json object: ")
@@ -106,12 +109,29 @@ async def handler(websocket: websockets.WebSocketServerProtocol) -> None:
         else:
             pass  # war als event gedacht, will so aber nicht so richtig
 
-        flag_subscribte_to_hoerer = incoming.subscribe_to_hoerer
-        print(f'subscribe flag: "{flag_subscribte_to_hoerer}" ({type(flag_subscribte_to_hoerer).__name__})')
-        if flag_subscribte_to_hoerer is True:
-            response = dict(hoerer_state=True)
+        flag_subscribe_to_hoerer = incoming.subscribe_to_hoerer
+        print(f'subscribe flag: "{flag_subscribe_to_hoerer}" ({type(flag_subscribe_to_hoerer).__name__})')
+        if type(flag_subscribe_to_hoerer) == str and flag_subscribe_to_hoerer.lower() == "now":
+            await send_hoerer_state(websocket, get_hoerer_up())
 
-            await websocket.send(json.dumps(response))
+        if type(flag_subscribe_to_hoerer) == str and flag_subscribe_to_hoerer.lower() == "onchange":
+            # TODO: do not block
+            # alternatively: make browser.html open a separate ws for ringing
+            await send_hoerer_change(websocket)
+
+            #doesn't block, but websocket will be expired.
+            # change_task = asyncio.create_task(send_hoerer_change(websocket))
+
+
+async def send_hoerer_change(websocket):
+    state = await get_hoerer_change()
+    await send_hoerer_state(websocket, state)
+
+
+async def send_hoerer_state(websocket, hoerer_up: bool):
+    response = dict(hoerer_state=hoerer_up)
+    await websocket.send(json.dumps(response))
+
 
 async def main() -> None:
     async with websockets.serve(handler, WsDomain, WsPort):
