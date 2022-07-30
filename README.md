@@ -4,7 +4,7 @@ Die Telefon-Klingel braucht 12 V. Das kann der Arduino nicht liefern, deshalb is
 
 Die aktuelle Konfiguration der Kabel am Arduino und der Platine ist als Foto abgelegt
 
-Der Telefonhörer geht einfach per Klinke als Headset in den NUC. Die größte Lautstärke wird in Debian mit der Einstellung "mono" erreicht (aktuell meine ich gerade nicht so konfiguriert.
+Der Telefonhörer geht einfach per Klinke als Headset in den NUC. Die größte Lautstärke wird in Debian mit der Einstellung "mono" erreicht (ich meine, dass die aktuelle Einstellug "stereo" ist).
 
 Die untere Platte des Telefons ist von innen/oben mit Holzschrauben auf der Brett des schwarz angestrichenen Gehäuses geschraubt. Um den Deckel des Telefons zu öffnen (um an die Holzschrauben kommen) müssen von unter dem Brett die zwei parallelen, vorderen Metall-Schrauben gelöst werden. Diese sind in den oberen Teil der Telefon-Abdeckung geschraubt und so gesichert, dass sie nicht aus dem Boden des Telefons fallen können. Im Holzbrett sind dafür Bohrungen vorgesehen, um die Schrauben im Telefongehäuse lösen zu können. Die hintere, einzelne Schraube am Gehäuseboden habe ich mit dem Loch in der Holzplatte nicht richtig getroffen und kann deshalb nicht festgeschraubt werden (muss aber auch nicht gelöst werden).
 
