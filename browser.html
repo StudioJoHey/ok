@@ -2,6 +2,7 @@
 
 <html>
    <head>
+      <meta charset="utf-8">
       
       <script type = "text/javascript">
          function WebSocketTest() {
@@ -9,37 +10,62 @@
             if ("WebSocket" in window) {
                console.info("WebSocket is supported by your Browser!");
                
-               // Let us open a web socket
-               var ws = new WebSocket("ws://localhost:3003/");
-				
-               ws.onopen = function() {
+               // Let us open a web socket for ringing
+               var wsRing = new WebSocket("ws://localhost:3003/");
 
-                  msg = {
-                     subscribeToHoerer: true,
-                     event: "RingingStop"
-                  }
-                  
+               wsRing.onopen = function() {
+                  document.getElementById("ctrlButtons").removeAttribute("hidden");
+                  document.getElementById("startButton").onclick = () => {
+                     wsRing.send(makeMsg("RingingStart", undefined));
+                  };
+                  document.getElementById("stopButton").onclick = () => {
+                     wsRing.send(makeMsg("RingingStop", undefined));
+                  };
+
+               };
+
+               wsRing.onmessage = function (evt) {
+                  var received_msg = JSON.parse(evt.data);
+                  console.log("Message is received on ring connection:");
+                  console.log(received_msg)
+               };
+				
+               wsRing.onclose = function() {
+                  document.getElementById("ctrlButtons").setAttribute("hidden", true);
+                  // websocket is closed.
+                  console.log("Ring connection is closed...");
+               };
+
+               // Let us open a web socket to check on the hoerer
+               var wsHoererUpdate = new WebSocket("ws://localhost:3003/");
+
+               wsHoererUpdate.onopen = function() {
+                  document.getElementById("hoererDiv").removeAttribute("hidden");
+
                   // Web Socket is connected, send data using send()
-                  ws.send(JSON.stringify(msg));
+                  wsHoererUpdate.send(makeMsg(undefined, "now"));
                   console.log("Message is sent...");
                };
 
-				
-               ws.onmessage = function (evt) { 
+               wsHoererUpdate.onmessage = function (evt) {
                   var received_msg = JSON.parse(evt.data);
                   console.log("Message is received:");
                   console.log(received_msg)
 
                   if (received_msg.hoerer_state != undefined) {
-                     console.log("ACK-ing");
-                     ws.send("ACK");
+                     let state = received_msg.hoerer_state ? "UP" : "DOWN";
+                     console.info("Hoerer is " + state);
+                     document.getElementById("hoererReadout").textContent = state;
+
+                     console.log("acknowledging");
+                     wsHoererUpdate.send(makeMsg(undefined, "onchange"));
                   }
                };
-				
-               ws.onclose = function() { 
-                  
+
+               wsHoererUpdate.onclose = function() {
+                  document.getElementById("hoererDiv").setAttribute("hidden", true);
                   // websocket is closed.
-                  console.log("Connection is closed..."); 
+                  console.log("Connection is closed...");
                };
             } else {
               
@@ -47,13 +73,34 @@
                console.warn("WebSocket NOT supported by your Browser!");
             }
          }
+
+         function makeMsg(event, hoerer) {
+            msg = {
+               event: event,
+               subscribeToHoerer: hoerer,
+            }
+
+            return JSON.stringify(msg);
+         }
       </script>
 		
    </head>
    
-   <body>
+   <body onload="javascript:WebSocketTest()">
       <div id = "sse">
-         <a href = "javascript:WebSocketTest()">Run WebSocket</a>
+         <a href = "javascript:WebSocketTest()">Retry</a>
+      </div>
+
+
+      <div id="ctrlButtons" hidden>
+         <hr>
+         <button id="startButton">Start Ringing</button>
+         <button id="stopButton">Stop Ringing</button>
+      </div>
+
+      <div id="hoererDiv" hidden>
+         <hr>
+         <span>Hörer ist </span><span id="hoererReadout"></span>
       </div>
       
    </body>
