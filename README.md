@@ -1,4 +1,4 @@
-# ok
+# Hardware-Beschreibung
 
 Die Telefon-Klingel braucht 12 V. Das kann der Arduino nicht liefern, deshalb ist das weitere Board dazwischen geschaltet, an das das 12 V Netzteil angeschlossen wird. Die Klingel funktioniert, indem sich die Pole schnell ändern. Es gibt kein "rechts oder links / falsch oder richtig". Sollte auch in der entsprechenden Python Funktion ablesbar sein.
 
