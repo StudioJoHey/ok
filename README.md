@@ -1,10 +1,23 @@
+# Software API-Beschreibung
+
+s. OAK-Phone_API-Schema_Updated.jpg
+
+Wenn der physische Telefon-Hörer hochgehoben wird, wird das event "PyhsicalUp" gesendet (ehemals "RecieverPicketUp")
+Wenn der physische Telefon-Hörer aufgelegt wird, wird das event "PyhsicalDown" gesendet (ehemals "RecieverPutDown")
+Wenn der virtuelle Telefon-Hörer hochgehoben wird, soll das event "DigitalUp" gesendet (ehemals "RecieverPicketUp") werden.
+Wenn der virtuelle Telefon-Hörer aufgelegt wird, soll das event "DigitalUp" gesendet (ehemals "RecieverPicketUp") werden.
+
+In browser.html ist ein Test programiert, der ausgeführt werden kann und verständlich zur kommunikation der virtuellen Welt sein sollte.
+
+
 # Hardware-Beschreibung
+
+An dem NUC sitzt ein Arduino, damit der "normale" Comupter In- und Output-Sockets hat, um mit der Hardware des physischen Telefons zu interargieren. Die Interaktion umfasst das Leuten der physischen Klingel im Telefon und das ermitteln des physischen Hörer-Status (oben oder unten).
+Der Telefonhörer geht einfach per Klinke als Headset (Lautsprecher + Micro) in den NUC. Die größte Lautstärke wird in Debian mit der Einstellung "mono" erreicht (ich meine, dass die aktuelle Einstellug "stereo" ist). **Der NUC besitzt zudem ein integriertes Mikrofon.** Dieses sollte zum besseren Verständnis nicht verwendet werden.
 
 Die Telefon-Klingel braucht 12 V. Das kann der Arduino nicht liefern, deshalb ist das weitere Board dazwischen geschaltet, an das das 12 V Netzteil angeschlossen wird. Die Klingel funktioniert, indem sich die Pole schnell ändern. Es gibt kein "rechts oder links / falsch oder richtig". Sollte auch in der entsprechenden Python Funktion ablesbar sein.
 
 Die aktuelle Konfiguration der Kabel am Arduino und der Platine ist als Foto abgelegt
-
-Der Telefonhörer geht einfach per Klinke als Headset in den NUC. Die größte Lautstärke wird in Debian mit der Einstellung "mono" erreicht (ich meine, dass die aktuelle Einstellug "stereo" ist).
 
 Die untere Platte des Telefons ist von innen/oben mit Holzschrauben auf der Brett des schwarz angestrichenen Gehäuses geschraubt. Um den Deckel des Telefons zu öffnen (um an die Holzschrauben kommen) müssen von unter dem Brett die zwei parallelen, vorderen Metall-Schrauben gelöst werden. Diese sind in den oberen Teil der Telefon-Abdeckung geschraubt und so gesichert, dass sie nicht aus dem Boden des Telefons fallen können. Im Holzbrett sind dafür Bohrungen vorgesehen, um die Schrauben im Telefongehäuse lösen zu können. Die hintere, einzelne Schraube am Gehäuseboden habe ich mit dem Loch in der Holzplatte nicht richtig getroffen und kann deshalb nicht festgeschraubt werden (muss aber auch nicht gelöst werden).
 
