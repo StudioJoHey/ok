@@ -16,10 +16,10 @@
                wsRing.onopen = function() {
                   document.getElementById("ctrlButtons").removeAttribute("hidden");
                   document.getElementById("startButton").onclick = () => {
-                     wsRing.send(makeMsg("RingingStart", undefined));
+                     wsRing.send(makeMsg("DigitalUp", undefined));
                   };
                   document.getElementById("stopButton").onclick = () => {
-                     wsRing.send(makeMsg("RingingStop", undefined));
+                     wsRing.send(makeMsg("DigitalDown", undefined));
                   };
 
                };
@@ -52,8 +52,16 @@
                   console.log("Message is received:");
                   console.log(received_msg)
 
-                  if (received_msg.hoerer_state != undefined) {
-                     let state = received_msg.hoerer_state ? "UP" : "DOWN";
+                  if (received_msg.event != undefined) {
+                     if (received_msg.event == "PhysicalUp") {
+
+                     }
+
+                     if (received_msg.event == "PhysicalDown") {
+
+                     }
+
+                     let state = received_msg.event;
                      console.info("Hoerer is " + state);
                      document.getElementById("hoererReadout").textContent = state;
 
@@ -94,8 +102,8 @@
 
       <div id="ctrlButtons" hidden>
          <hr>
-         <button id="startButton">Start Ringing</button>
-         <button id="stopButton">Stop Ringing</button>
+         <button id="startButton">Pick Up</button>
+         <button id="stopButton">Put Down</button>
       </div>
 
       <div id="hoererDiv" hidden>
