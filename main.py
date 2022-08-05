@@ -5,7 +5,11 @@ import asyncio
 import websockets
 import json
 import os
+import sys
+import signal
 
+# exit gracefully on CTRL-c
+signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
 
 # from pyfirmata import Arduino, util
 # board = Arduino("/dev/ttyACM0", baudrate=57600)
