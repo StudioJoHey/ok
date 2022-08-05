@@ -4,7 +4,6 @@ from typing import Literal, Union
 import asyncio
 import websockets
 import json
-import os
 import sys
 import signal
 
@@ -167,11 +166,15 @@ async def dialer(updated):
         await updated.wait()
         while state.get_state() == "Calling":
             print("[debug] playing sound")
-            # with Popen, this could probably be canceled
-            os.system('omxplayer ./Sounds/Ring1x.mp3')
+
+            # this api should allow premature termination
+            player = asyncio.create_subprocess_exec(
+                "play", "./Sounds/Ring1x.mp3")
+
             for _ in range(14):
                 await asyncio.sleep(0.25)
                 if state.get_state() != "Calling":
+                    player.terminate()
                     break
 
 
