@@ -98,7 +98,7 @@ async def handler(websocket):
 async def consumer_handler(websocket, updated):
     async for message in websocket:
         try:
-            incoming = json.loads(message, object_hook=lambda m: Message(m))
+            incoming = json.loads(message, object_hook=Message)
 
         except json.decoder.JSONDecodeError:
             print(f"[error] event is not a json object: {message}")
@@ -162,7 +162,7 @@ async def dialer(updated):
     while True:
         await updated.wait()
         while state.get_state() == "Calling":
-            print("playing sound")
+            print("[debug] playing sound")
             # with Popen, this could probably be canceled
             os.system('omxplayer ./Sounds/Ring1x.mp3')
             for _ in range(14):
