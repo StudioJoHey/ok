@@ -1,3 +1,4 @@
+from pyfirmata import Arduino, util
 import math
 from time import time
 from typing import Literal, Union
@@ -9,9 +10,6 @@ import signal
 
 # exit gracefully on CTRL-c
 signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
-
-# from pyfirmata import Arduino, util
-# board = Arduino("/dev/ttyACM0", baudrate=57600)
 
 
 class MockAnalogPin:
@@ -29,15 +27,18 @@ class MockArduino:
     digital = [MockDigitalPin() for _ in range(8)]
 
 
-board = MockArduino()
+board = Arduino("/dev/ttyACM0", baudrate=57600)
+
+
+# board = MockArduino()
 
 # checks for working connection
-# print(board.get_firmata_version())
+print(board.get_firmata_version())
 
 # Start iterator to receive input data from Arduino
-# it = util.Iterator(board)
-# it.start()
-# board.analog[0].enable_reporting()
+it = util.Iterator(board)
+it.start()
+board.analog[0].enable_reporting()
 
 # url = "ws://localhost:3003"
 domain = "localhost"
@@ -134,7 +135,7 @@ async def send_physical_state(websocket, physical_up: bool):
 
 
 def check_physical_up() -> bool:
-    return board.analog[0].read() <= 0.2
+    return board.analog[0].read() >= 0.2
 
 
 async def printer(updated):
@@ -164,19 +165,15 @@ async def ringer(updated):
 async def dialer(updated):
     while True:
         await updated.wait()
-        while state.get_state() == "Calling":
+        if state.get_state() == "Calling":
             print("[debug] playing sound")
-
-            # this api should allow premature termination
-            player = asyncio.create_subprocess_exec(
-                "play", "./Sounds/Ring1x.mp3")
-
-            for _ in range(14):
-                await asyncio.sleep(0.25)
-                if state.get_state() != "Calling":
-                    player.terminate()
-                    break
-
+            cmd = ["mpg123", "-q", "--loop", "-1", "./Sounds/Ring1x.mp3"]
+            player = await asyncio.create_subprocess_exec(*cmd)
+            while state.get_state() == "Calling":
+                await updated.wait()
+            print("[debug] terminating player process")
+            player.terminate()
+            await player.wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
