@@ -12,19 +12,19 @@ import signal
 signal.signal(signal.SIGINT, lambda x, y: sys.exit(0))
 
 
-class MockAnalogPin:
-    def read(_):
-        return math.sin(time())
+# class MockAnalogPin:
+#     def read(_):
+#         return 0
 
 
-class MockDigitalPin:
-    def write(_0, _1):
-        return 1
+# class MockDigitalPin:
+#     def write(_0, _1):
+#         return 1
 
 
-class MockArduino:
-    analog = [MockAnalogPin() for _ in range(8)]
-    digital = [MockDigitalPin() for _ in range(8)]
+# class MockArduino:
+#     analog = [MockAnalogPin() for _ in range(8)]
+#     digital = [MockDigitalPin() for _ in range(8)]
 
 
 board = Arduino("/dev/ttyACM0", baudrate=57600)
@@ -73,8 +73,6 @@ class State:
 
 state = State()
 
-# 4 actors, ring loop, dialtone loop, check loop and message loop
-
 
 async def main() -> None:
     async with websockets.serve(handler, domain, port):
@@ -89,10 +87,9 @@ async def handler(websocket):
     producer_task = asyncio.create_task(producer_handler(websocket, updated))
     printer_task = asyncio.create_task(printer(updated))
     ringer_task = asyncio.create_task(ringer(updated))
-    dialer_task = asyncio.create_task(dialer(updated))
     updated.set()
     done, pending = await asyncio.wait(
-        [consumer_task, producer_task, ringer_task, dialer_task, printer_task],
+        [consumer_task, producer_task, ringer_task, printer_task],
         return_when=asyncio.FIRST_COMPLETED,
     )
     for task in pending:
@@ -161,19 +158,6 @@ async def ringer(updated):
                     break
             await asyncio.sleep(1)
 
-
-async def dialer(updated):
-    while True:
-        await updated.wait()
-        if state.get_state() == "Calling":
-            print("[debug] playing sound")
-            cmd = ["mpg123", "-q", "--loop", "-1", "./Sounds/Ring1x.mp3"]
-            player = await asyncio.create_subprocess_exec(*cmd)
-            while state.get_state() == "Calling":
-                await updated.wait()
-            print("[debug] terminating player process")
-            player.terminate()
-            await player.wait()
 
 if __name__ == "__main__":
     asyncio.run(main())
